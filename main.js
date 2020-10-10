@@ -2,6 +2,10 @@ $(document).ready(function() {
     $.event.special.tap.emitTapOnTaphold = false;
 });
 
+function isMobile() {
+    return ((window.innerWidth <= 800) && (window.innerHeight <= 600)); // could make more robust
+}
+
 "use strict";
 window.addEventListener('load', main);
 
@@ -196,34 +200,6 @@ let MSGame = (function() {
 })();
 
 /**
- * @param {MSGame} game 
- */
-function prepare_dom(game) {
-    const grid = document.querySelector(".grid");
-    const nCells = 20 * 24; // max grid size 
-    for (let i = 0; i < nCells; i++) {
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        cell.setAttribute("data-cellId", i);
-        cell.setAttribute("id", i);
-        // cell.addEventListener("click", () => {
-        //     cell_click_cb(game, i);
-        // });
-        grid.appendChild(cell);
-    }
-    $(document).ready(function() {
-        for (let i = 0; i < nCells; i++) {
-            $(`#${i}`).on("tap", () => {
-                (cell_click_cb(game, i))
-            });
-            $(`#${i}`).on("taphold", () => {
-                (cell_taphold_cd(game, i))
-            }); //TODO maybe make this less janky
-        }
-    });
-}
-
-/**
  * - hides unnecessary cards by setting their display: none
  * - adds "flipped" class to cards that were flipped
  * 
@@ -243,9 +219,9 @@ function render(game) {
                 const col = id % game.cols;
                 const row = Math.floor(id / game.cols);
                 if (game.arr[row][col].cellState == "shown") {
+                    lockCell(cell.getAttribute("id"), game); //fix this for marking
                     cell.classList.add("shown");
                     cell.classList.add("image");
-                    //else if (a.cellState === STATE_MARKED) s += "F"; <-- means flagged
                     if (game.arr[row][col].count == 0) {
                         cell.style.backgroundImage = "none";
                     } else if (game.arr[row][col].count == 1) {
@@ -268,6 +244,14 @@ function render(game) {
                         cell.style.backgroundImage = "url('nine.svg')";
                     }
                 } else if (game.arr[row][col].cellState == "hidden") {
+                    unlockCell(cell.getAttribute("id"), game);
+                    cell.classList.remove("shown");
+                    cell.classList.remove("bomb");
+                }
+                if (game.arr[row][col].cellState == "marked") {
+                    lockCell(cell.getAttribute("id"), game);
+                    cell.style.backgroundImage = "url('flag.svg')";
+                    cell.classList.add("image");
                     cell.classList.remove("shown");
                     cell.classList.remove("bomb");
                 }
@@ -317,6 +301,65 @@ function cell_taphold_cd(game, id) {
     console.log(game.getRendering().join("\n"));
     console.log(game.getGameStatus());
 }
+
+/**
+ * @param {MSGame} game 
+ */
+function prepare_dom(game) {
+    const grid = document.querySelector(".grid");
+    const nCells = 20 * 24; // max grid size 
+    for (let i = 0; i < nCells; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.setAttribute("data-cellId", i);
+        cell.setAttribute("id", i);
+        // cell.addEventListener("click", () => {
+        //     cell_click_cb(game, i);
+        // });
+        grid.appendChild(cell);
+    }
+    $(document).ready(function() {
+        for (let i = 0; i < nCells; i++) {
+            if (isMobile()) {
+                $(`#${i}`).on("tap", () => {
+                    (cell_click_cb(game, i))
+                });
+                $(`#${i}`).on("taphold", () => {
+                    (cell_taphold_cd(game, i))
+                });
+            } else {
+                $(`#${i}`).on("contextmenu", () => {
+                    (cell_taphold_cd(game, i))
+                    return false;
+                });
+                $(`#${i}`).on("click", () => {
+                    (cell_click_cb(game, i))
+                });
+            } //TODO maybe make this less janky
+        }
+    });
+}
+
+function lockCell(id, game) {
+    if (isMobile()) {
+        $(`#${id}`).off("tap");
+    } else {
+        $(`#${id}`).off("click");
+    }
+}
+
+function unlockCell(id, game) {
+    if (isMobile()) {
+        $(`#${id}`).on("tap", () => {
+            (cell_click_cb(game, id))
+        });
+    } else {
+        $(`#${id}`).on("click", () => {
+            (cell_click_cb(game, id))
+        });
+    }
+}
+
 
 
 function main() {
