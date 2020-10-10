@@ -20,6 +20,7 @@
     display: flex;
     justify-content: center;
     align-items: stretch;
+    -webkit-touch-callout: none !important;
 }
 
 .grid {
@@ -28,6 +29,7 @@
     border-radius: 10px;
     padding: 5px;
     width: calc(70vh);
+    -webkit-touch-callout: none !important;
 }
 
 .grid>div::before {
