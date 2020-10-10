@@ -375,25 +375,3 @@ function main() {
     button_cb(game, game.rows, game.cols);
 
 }
-
-
-// let game = new MSGame();
-
-// game.init(8, 10, 10);
-// console.log(game.getRendering().join("\n"));
-// console.log(game.getStatus());
-
-// game.uncover(2, 5);
-// console.log(game.getRendering().join("\n"));
-// console.log(game.getStatus());
-
-// game.uncover(5, 5);
-// console.log(game.getRendering().join("\n"));
-// console.log(game.getStatus());
-
-// game.mark(4, 5);
-// console.log(game.getRendering().join("\n"));
-// console.log(game.getStatus());
-
-
-// console.log("end");
