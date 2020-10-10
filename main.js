@@ -344,14 +344,12 @@ function prepare_dom(game) {
       if (isMobile()) {
         $(`#${i}`).on("tap", { game: game, id: i }, cell_click_cb);
         $(`#${i}`).on("taphold", { game: game, id: i }, cell_taphold_cd);
-        //document.getElementById(`#${i}`).style.webkitTouchCallout = "none !important";
       } else {
         $(`#${i}`).on("contextmenu", { game: game, id: i }, cell_taphold_cd);
         $(`#${i}`).on("contextmenu", () => {
           return false;
         });
         $(`#${i}`).on("click", { game: game, id: i }, cell_click_cb);
-        //document.getElementById(`#${i}`).style.webkitTouchCallout = "none !important";
       } //TODO maybe make this less janky
     }
   });
