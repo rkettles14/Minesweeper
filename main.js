@@ -4,6 +4,7 @@ $(document).ready(function() {
 
 function isMobile() {
   //the following code is taken from http://detectmobilebrowsers.com/
+  //TODO: ASK IF THIS IS OK.
   let check = false;
   (function(a) {
     if (
@@ -285,9 +286,10 @@ function render(game) {
 /**
  * callback for the top button
  */
-function button_cb(game, rows, cols) {
+function button_cb(game, rows, cols, mines) {
   game.rows = rows;
   game.cols = cols;
+  game.mines = mines;
   game.init(game.rows, game.cols, game.mines);
   console.log(game.getRendering().join("\n"));
   render(game);
@@ -373,14 +375,14 @@ function main() {
   let game = new MSGame();
 
   document.querySelectorAll(".menuButton").forEach(button => {
-    let [rows, cols] = button
+    let [rows, cols, mines] = button
       .getAttribute("data-size")
       .split("x")
       .map(s => Number(s));
-    button.addEventListener("click", button_cb.bind(null, game, rows, cols));
+    button.addEventListener("click", button_cb.bind(null, game, rows, cols, mines));
   });
 
   prepare_dom(game);
 
-  button_cb(game, game.rows, game.cols);
+  button_cb(game, game.rows, game.cols, game.mines);
 }
