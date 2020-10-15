@@ -23,6 +23,21 @@ function isMobile() {
 ("use strict");
 window.addEventListener("load", main);
 
+function updateTimer(game) {
+    var now = new Date().getTime(),
+        dt = now - game.lastUpdateTime;
+    game.currentTime = game.currentTime + dt;
+    var time = new Date(game.currentTime);
+    game.secs.innerHTML = pad(time.getMinutes(), time.getSeconds());
+    game.lastUpdateTime = now;
+}
+
+function pad(m, s) {
+    let minutes = ('00' + m).substr(-2);
+    let seconds = ('00' + s).substr(-2);
+    return minutes.concat(":").concat(seconds);
+}
+
 let MSGame = (function() {
     // private constants
     const STATE_HIDDEN = "hidden";
@@ -50,14 +65,14 @@ let MSGame = (function() {
         return minutes.concat(":").concat(seconds);
     }
 
-    function updateTimer(game) {
-        var now = new Date().getTime(),
-            dt = now - game.lastUpdateTime;
-        game.currentTime = game.currentTime + dt;
-        var time = new Date(game.currentTime);
-        game.secs.innerHTML = pad(time.getMinutes(), time.getSeconds());
-        game.lastUpdateTime = now;
-    }
+    // function updateTimer(game) {
+    //     var now = new Date().getTime(),
+    //         dt = now - game.lastUpdateTime;
+    //     game.currentTime = game.currentTime + dt;
+    //     var time = new Date(game.currentTime);
+    //     game.secs.innerHTML = pad(time.getMinutes(), time.getSeconds());
+    //     game.lastUpdateTime = now;
+    // }
 
     class _MSGame {
         constructor() {
@@ -83,7 +98,7 @@ let MSGame = (function() {
             this.arr = array2d(rows, cols, () => ({
                 mine: false,
                 cellState: STATE_HIDDEN,
-                prevCellState: STATE_HIDDEN,
+                prevCellState: null,
                 count: 0
             }));
             this.currentTime = 0;
@@ -278,39 +293,39 @@ function render(game) {
             if (game) {
                 const col = id % game.cols;
                 const row = Math.floor(id / game.cols);
-                if (game.arr[row][col].cellState == "shown") {
-                    lockCell(cell.getAttribute("id"), game); //fix this for marking
+                if (game.arr[row][col].cellState === "shown") {
+                    lockCell(cell.getAttribute("id"), game);
                     cell.classList.add("shown");
                     cell.classList.add("image");
-                    if (game.arr[row][col].count == 0) {
+                    if (game.arr[row][col].count === 0) {
                         cell.style.backgroundImage = "none";
-                    } else if (game.arr[row][col].count == 1) {
+                    } else if (game.arr[row][col].count === 1) {
                         cell.style.backgroundImage = "url('one.svg')";
-                    } else if (game.arr[row][col].count == 2) {
+                    } else if (game.arr[row][col].count === 2) {
                         cell.style.backgroundImage = "url('two.svg')";
-                    } else if (game.arr[row][col].count == 3) {
+                    } else if (game.arr[row][col].count === 3) {
                         cell.style.backgroundImage = "url('three.svg')";
-                    } else if (game.arr[row][col].count == 4) {
+                    } else if (game.arr[row][col].count === 4) {
                         cell.style.backgroundImage = "url('four.svg')";
-                    } else if (game.arr[row][col].count == 5) {
+                    } else if (game.arr[row][col].count === 5) {
                         cell.style.backgroundImage = "url('five.svg')";
-                    } else if (game.arr[row][col].count == 6) {
+                    } else if (game.arr[row][col].count === 6) {
                         cell.style.backgroundImage = "url('six.svg')";
-                    } else if (game.arr[row][col].count == 7) {
+                    } else if (game.arr[row][col].count === 7) {
                         cell.style.backgroundImage = "url('seven.svg')";
-                    } else if (game.arr[row][col].count == 8) {
+                    } else if (game.arr[row][col].count === 8) {
                         cell.style.backgroundImage = "url('eight.svg')";
-                    } else if (game.arr[row][col].count == 9) {
+                    } else if (game.arr[row][col].count === 9) {
                         cell.style.backgroundImage = "url('nine.svg')";
                     }
-                } else if (game.arr[row][col].cellState == "hidden") {
-                    if (game.arr[row][col].prevCellState == "marked") {
+                } else if (game.arr[row][col].cellState === "hidden") {
+                    if (game.arr[row][col].prevCellState === "marked") {
                         unlockCell(cell.getAttribute("id"), game);
                     }
                     cell.classList.remove("shown");
                     cell.classList.remove("bomb");
                 }
-                if (game.arr[row][col].cellState == "marked") {
+                if (game.arr[row][col].cellState === "marked") {
                     lockCell(cell.getAttribute("id"), game);
                     cell.style.backgroundImage = "url('flag.svg')";
                     cell.classList.add("image");
@@ -331,13 +346,7 @@ function render(game) {
  * callback for the top button
  */
 function button_cb(game, rows, cols, mines) {
-    game.rows = rows;
-    game.cols = cols;
-    game.mines = mines;
-    game.init(game.rows, game.cols, game.mines);
-    console.log(game.getRendering().join("\n"));
-    document.querySelector(".flags").innerHTML = game.mines;
-    render(game);
+    startNewGame(game, rows, cols, mines)
 }
 
 function cell_uncover_cb(event) {
@@ -354,11 +363,16 @@ function cell_uncover_cb(event) {
     // check if we won and activate overlay if we did
     if (status.done) {
         game.stopTimer();
+        if (status.exploded) {
+            document.querySelector("#overlay .big.glow").innerHTML = "You Exploded!!!"
+            document.querySelector("#overlay").classList.toggle("active");
+            document.querySelector("#overlay").classList.toggle("lose");
+        } else {
+            document.querySelector("#overlay .big.glow").innerHTML = "Congratulations, You Won!"
+            document.querySelector("#overlay").classList.toggle("active");
+            document.querySelector("#overlay").classList.toggle("win");
+        }
     }
-    // if (s.onoff.reduce((res, l) => res && !l, true)) {
-    //     document.querySelector("#overlay").classList.toggle("active");
-    // }
-    // clickSound.play();
 }
 
 function cell_flag_cb(event) {
@@ -375,6 +389,12 @@ function cell_flag_cb(event) {
     console.log(game.getGameStatus());
 }
 
+function overlay_click_cb(event) {
+    const game = event.data.game;
+    document.querySelector("#overlay").classList.remove("active");
+    startNewGame(game, game.rows, game.cols, game.mines);
+}
+
 /**
  * @param {MSGame} game
  */
@@ -387,26 +407,41 @@ function prepare_dom(game) {
         cell.setAttribute("id", i);
         grid.appendChild(cell);
     }
-    $(document).ready(function() {
-        for (let i = 0; i < nCells; i++) {
-            if (isMobile()) {
-                $(`#${i}`).on("tap", { game: game, id: i }, cell_uncover_cb);
-                $(`#${i}`).on("taphold", { game: game, id: i }, cell_flag_cb);
-                $(`#${i}`).on("contextmenu", () => {
-                    return false;
-                });
-                $('.grid').on("contextmenu", () => {
-                    return false;
-                });
-            } else {
-                $(`#${i}`).on("contextmenu", { game: game, id: i }, cell_flag_cb);
-                $(`#${i}`).on("contextmenu", () => {
-                    return false;
-                });
-                $(`#${i}`).on("click", { game: game, id: i }, cell_uncover_cb);
-            }
+}
+
+function initializeCells(game) {
+    const nCells = game.rows * game.cols;
+    for (let i = 0; i < nCells; i++) {
+        if (isMobile()) {
+            $(`#${i}`).on("tap", { game: game, id: i }, cell_uncover_cb);
+            $(`#${i}`).on("taphold", { game: game, id: i }, cell_flag_cb);
+            $(`#${i}`).on("contextmenu", () => {
+                return false;
+            });
+            $('.grid').on("contextmenu", () => {
+                return false;
+            });
+        } else {
+            $(`#${i}`).on("contextmenu", { game: game, id: i }, cell_flag_cb);
+            $(`#${i}`).on("contextmenu", () => {
+                return false;
+            });
+            $(`#${i}`).on("click", { game: game, id: i }, cell_uncover_cb);
         }
-    });
+    }
+}
+
+function clearCells(game) {
+    const nCells = game.rows * game.cols;
+    for (let i = 0; i < nCells; i++) {
+        if (isMobile()) {
+            $(`#${i}`).off("tap");
+            $(`#${i}`).off("taphold");
+        } else {
+            $(`#${i}`).off("click");
+            $(`#${i}`).off("contextmenu", cell_flag_cb);
+        }
+    }
 }
 
 function lockCell(id, game) {
@@ -423,6 +458,21 @@ function unlockCell(id, game) {
     } else {
         $(`#${id}`).on("click", { game: game, id: id }, cell_uncover_cb);
     }
+}
+
+function startNewGame(game, rows, cols, mines) {
+    clearCells(game);
+    game.stopTimer();
+    game.rows = rows;
+    game.cols = cols;
+    game.mines = mines;
+    game.init(game.rows, game.cols, game.mines);
+    updateTimer(game);
+    $('#overlay').one("click", { game: game, }, overlay_click_cb);
+    initializeCells(game);
+    console.log(game.getRendering().join("\n"));
+    document.querySelector(".flags").innerHTML = game.mines;
+    render(game);
 }
 
 function main() {
@@ -444,5 +494,7 @@ function main() {
 
     prepare_dom(game);
 
-    button_cb(game, game.rows, game.cols, game.mines);
+    $(document).ready(function() {
+        startNewGame(game, game.rows, game.cols, game.mines);
+    });
 }
