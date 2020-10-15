@@ -269,7 +269,7 @@ function render(game) {
     grid.style.gridTemplateColumns = `repeat(${game.cols}, 1fr)`;
     for (let i = 0; i < grid.children.length; i++) {
         const cell = grid.children[i];
-        const id = Number(cell.getAttribute("data-cellId"));
+        const id = Number(cell.getAttribute("id"));
         if (id >= game.rows * game.cols) {
             cell.style.display = "none";
         } else {
@@ -384,7 +384,6 @@ function prepare_dom(game) {
     for (let i = 0; i < nCells; i++) {
         const cell = document.createElement("div");
         cell.className = "cell";
-        cell.setAttribute("data-cellId", i);
         cell.setAttribute("id", i);
         grid.appendChild(cell);
     }
@@ -394,6 +393,9 @@ function prepare_dom(game) {
                 $(`#${i}`).on("tap", { game: game, id: i }, cell_uncover_cb);
                 $(`#${i}`).on("taphold", { game: game, id: i }, cell_flag_cb);
                 $(`#${i}`).on("contextmenu", () => {
+                    return false;
+                });
+                $('.grid').on("contextmenu", () => {
                     return false;
                 });
             } else {
