@@ -4,7 +4,6 @@ $(document).ready(function() {
 
 function isMobile() {
     //the following code is taken from http://detectmobilebrowsers.com/
-    //TODO: ASK IF THIS IS OK.
     let check = false;
     (function(a) {
         if (
@@ -59,21 +58,6 @@ let MSGame = (function() {
         return min + Math.floor(Math.random() * (max - min + 1));
     }
 
-    function pad(m, s) {
-        let minutes = ('00' + m).substr(-2);
-        let seconds = ('00' + s).substr(-2);
-        return minutes.concat(":").concat(seconds);
-    }
-
-    // function updateTimer(game) {
-    //     var now = new Date().getTime(),
-    //         dt = now - game.lastUpdateTime;
-    //     game.currentTime = game.currentTime + dt;
-    //     var time = new Date(game.currentTime);
-    //     game.secs.innerHTML = pad(time.getMinutes(), time.getSeconds());
-    //     game.lastUpdateTime = now;
-    // }
-
     class _MSGame {
         constructor() {
             if (isMobile()) {
@@ -98,7 +82,7 @@ let MSGame = (function() {
             this.arr = array2d(rows, cols, () => ({
                 mine: false,
                 cellState: STATE_HIDDEN,
-                prevCellState: null,
+                prevCellState: STATE_HIDDEN,
                 count: 0
             }));
             this.currentTime = 0;
@@ -225,11 +209,8 @@ let MSGame = (function() {
                 }
                 // accept the move and flip the marked gameStatus
                 this.nmarked += this.arr[row][col].cellState == STATE_MARKED ? -1 : 1;
+                this.arr[row][col].prevCellState = this.arr[row][col].cellState;
                 this.arr[row][col].cellState =
-                    this.arr[row][col].cellState == STATE_MARKED ?
-                    STATE_HIDDEN :
-                    STATE_MARKED;
-                this.arr[row][col].prevCellState =
                     this.arr[row][col].cellState == STATE_MARKED ?
                     STATE_HIDDEN :
                     STATE_MARKED;
@@ -380,9 +361,14 @@ function cell_flag_cb(event) {
     const id = event.data.id;
     const col = id % game.cols;
     const row = Math.floor(id / game.cols);
-    game.mark(row, col);
     flags = parseInt(document.querySelector(".flags").innerHTML);
-    flags -= 1;
+    if (game.arr[row][col].cellState === "hidden") {
+        game.mark(row, col);
+        flags -= 1;
+    } else if (game.arr[row][col].cellState === "marked") {
+        game.mark(row, col);
+        flags += 1;
+    }
     document.querySelector(".flags").innerHTML = flags;
     render(game);
     console.log(game.getRendering().join("\n"));
@@ -410,9 +396,9 @@ function prepare_dom(game) {
 }
 
 function initializeCells(game) {
-    const nCells = game.rows * game.cols;
-    for (let i = 0; i < nCells; i++) {
-        if (isMobile()) {
+    const nCells = 20 * 24;
+    if (isMobile()) {
+        for (let i = 0; i < nCells; i++) {
             $(`#${i}`).on("tap", { game: game, id: i }, cell_uncover_cb);
             $(`#${i}`).on("taphold", { game: game, id: i }, cell_flag_cb);
             $(`#${i}`).on("contextmenu", () => {
@@ -421,27 +407,26 @@ function initializeCells(game) {
             $('.grid').on("contextmenu", () => {
                 return false;
             });
-        } else {
+        }
+    } else {
+        for (let i = 0; i < nCells; i++) {
             $(`#${i}`).on("contextmenu", { game: game, id: i }, cell_flag_cb);
             $(`#${i}`).on("contextmenu", () => {
                 return false;
             });
             $(`#${i}`).on("click", { game: game, id: i }, cell_uncover_cb);
         }
+
     }
 }
 
 function clearCells(game) {
-    const nCells = game.rows * game.cols;
+    const nCells = 20 * 24;
     for (let i = 0; i < nCells; i++) {
-        if (isMobile()) {
-            $(`#${i}`).off("tap");
-            $(`#${i}`).off("taphold");
-        } else {
-            $(`#${i}`).off("click");
-            $(`#${i}`).off("contextmenu", cell_flag_cb);
-        }
+        $(`#${i}`).off();
+        // $(`#${i}`).off();
     }
+
 }
 
 function lockCell(id, game) {
@@ -482,7 +467,7 @@ function main() {
         let [rows, cols, mines] = button
             .getAttribute("data-size-desktop")
             .split("x")
-            .map(s => Number(s));;
+            .map(s => Number(s));
         if (isMobile()) {
             [rows, cols, mines] = button
                 .getAttribute("data-size-mobile")
