@@ -16,6 +16,22 @@
     font-size: 1em;
 }
 
+.gameInfo {
+    margin: 5px;
+}
+
+.icon {
+    padding-left: 5px;
+}
+
+.timer {
+    padding-right: 5px;
+}
+
+.flags {
+    padding-right: 5px;
+}
+
 .gridwrapper {
     display: flex;
     justify-content: center;
@@ -42,7 +58,7 @@
     height: auto;
     border-radius: 10%;
     border: none;
-    margin: 2px;
+    margin: 1px;
 }
 
 .cell.shown {

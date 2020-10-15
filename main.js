@@ -61,7 +61,11 @@ let MSGame = (function() {
 
     class _MSGame {
         constructor() {
-            this.init(8, 10, 10); // easy
+            if (isMobile()) {
+                this.init(11, 7, 10); //mobile easy
+            } else {
+                this.init(8, 10, 10); //desktop easy
+            }
         }
 
         validCoord(row, col) {
@@ -150,46 +154,49 @@ let MSGame = (function() {
             console.log(mines.join("\n"), "\n");
         }
 
-        // puts a flag on a cell
-        // this is the 'right-click' or 'long-tap' functionality
+        // uncovers a cell at a given coordinate
+        // this is the 'left-click' functionality
         uncover(row, col) {
-                console.log("uncover", row, col);
-                // if coordinates invalid, refuse this request
-                if (!this.validCoord(row, col)) return false;
-                // if this is the very first move, populate the mines, but make
-                // sure the current cell does not get a mine
-                if (this.nuncovered === 0) {
-                    this.sprinkleMines(row, col);
+            console.log("uncover", row, col);
+            // if coordinates invalid, refuse this request
+            if (!this.validCoord(row, col)) return false;
+            // if this is the very first move, populate the mines, but make
+            // sure the current cell does not get a mine
+            if (this.nuncovered === 0) {
+                this.sprinkleMines(row, col);
+                if (this.nmarked === 0) {
                     this.startTimer();
                 }
-                // if cell is not hidden, ignore this move
-                if (this.arr[row][col].cellState !== STATE_HIDDEN) return false;
-                // floodfill all 0-count cells
-                const ff = (r, c) => {
-                    if (!this.validCoord(r, c)) return;
-                    if (this.arr[r][c].cellState !== STATE_HIDDEN) return;
-                    this.arr[r][c].cellState = STATE_SHOWN;
-                    this.arr[r][c].prevCellState = STATE_HIDDEN;
-                    this.nuncovered++;
-                    if (this.arr[r][c].count !== 0) return;
-                    ff(r - 1, c - 1);
-                    ff(r - 1, c);
-                    ff(r - 1, c + 1);
-                    ff(r, c - 1);
-                    ff(r, c + 1);
-                    ff(r + 1, c - 1);
-                    ff(r + 1, c);
-                    ff(r + 1, c + 1);
-                };
-                ff(row, col);
-                // have we hit a mine?
-                if (this.arr[row][col].mine) {
-                    this.exploded = true;
-                }
-                return true;
             }
-            // uncovers a cell at a given coordinate
-            // this is the 'left-click' functionality
+            // if cell is not hidden, ignore this move
+            if (this.arr[row][col].cellState !== STATE_HIDDEN) return false;
+            // floodfill all 0-count cells
+            const ff = (r, c) => {
+                if (!this.validCoord(r, c)) return;
+                if (this.arr[r][c].cellState !== STATE_HIDDEN) return;
+                this.arr[r][c].cellState = STATE_SHOWN;
+                this.arr[r][c].prevCellState = STATE_HIDDEN;
+                this.nuncovered++;
+                if (this.arr[r][c].count !== 0) return;
+                ff(r - 1, c - 1);
+                ff(r - 1, c);
+                ff(r - 1, c + 1);
+                ff(r, c - 1);
+                ff(r, c + 1);
+                ff(r + 1, c - 1);
+                ff(r + 1, c);
+                ff(r + 1, c + 1);
+            };
+            ff(row, col);
+            // have we hit a mine?
+            if (this.arr[row][col].mine) {
+                this.exploded = true;
+            }
+            return true;
+        }
+
+        // puts a flag on a cell
+        // this is the 'right-click' or 'long-tap' functionality
         mark(row, col) {
                 console.log("mark", row, col);
                 // if coordinates invalid, refuse this request
@@ -197,6 +204,10 @@ let MSGame = (function() {
                 // if cell already uncovered, refuse this
                 console.log("marking previous cellState=", this.arr[row][col].cellState);
                 if (this.arr[row][col].cellState === STATE_SHOWN) return false;
+                // if first move, start the timer
+                if (this.nmarked === 0 && this.nuncovered === 0) {
+                    this.startTimer();
+                }
                 // accept the move and flip the marked gameStatus
                 this.nmarked += this.arr[row][col].cellState == STATE_MARKED ? -1 : 1;
                 this.arr[row][col].cellState =
@@ -316,43 +327,6 @@ function render(game) {
     }
 }
 
-// var ss = document.getElementsByClassName("timer");
-// [].forEach.call(ss, function(s) {
-//     var currentTime = 0,
-//         interval = 0,
-//         lastUpdateTime = new Date().getTime(),
-//         start = s.querySelector('button.start'),
-//         stop = s.querySelector('button.stop'),
-//         secs = s.querySelector('span.seconds')
-//     start.addEventListener('click', startTimer);
-//     stop.addEventListener('click', stopTimer);
-
-//     function pad(n) {
-//         return ('00' + n).substr(-2);
-//     }
-
-//     function update() {
-//         var now = new Date().getTime(),
-//             dt = now - lastUpdateTime;
-//         currentTime = currentTime + dt;
-//         var time = new Date(currentTime);
-//         secs.innerHTML = pad(time.getSeconds());
-//         lastUpdateTime = now;
-//     }
-
-//     function startTimer() {
-//         if (!interval) {
-//             lastUpdateTime = new Date().getTime();
-//             interval = setInterval(update, 1);
-//         }
-//     }
-
-//     function stopTimer() {
-//         clearInterval(interval);
-//         interval = 0;
-//     }
-// });
-
 /**
  * callback for the top button
  */
@@ -362,6 +336,7 @@ function button_cb(game, rows, cols, mines) {
     game.mines = mines;
     game.init(game.rows, game.cols, game.mines);
     console.log(game.getRendering().join("\n"));
+    document.querySelector(".flags").innerHTML = game.mines;
     render(game);
 }
 
@@ -392,6 +367,9 @@ function cell_flag_cb(event) {
     const col = id % game.cols;
     const row = Math.floor(id / game.cols);
     game.mark(row, col);
+    flags = parseInt(document.querySelector(".flags").innerHTML);
+    flags -= 1;
+    document.querySelector(".flags").innerHTML = flags;
     render(game);
     console.log(game.getRendering().join("\n"));
     console.log(game.getGameStatus());
@@ -408,9 +386,6 @@ function prepare_dom(game) {
         cell.className = "cell";
         cell.setAttribute("data-cellId", i);
         cell.setAttribute("id", i);
-        // cell.addEventListener("click", () => {
-        //     cell_click_cb(game, i);
-        // });
         grid.appendChild(cell);
     }
     $(document).ready(function() {
@@ -418,13 +393,16 @@ function prepare_dom(game) {
             if (isMobile()) {
                 $(`#${i}`).on("tap", { game: game, id: i }, cell_uncover_cb);
                 $(`#${i}`).on("taphold", { game: game, id: i }, cell_flag_cb);
+                $(`#${i}`).on("contextmenu", () => {
+                    return false;
+                });
             } else {
                 $(`#${i}`).on("contextmenu", { game: game, id: i }, cell_flag_cb);
                 $(`#${i}`).on("contextmenu", () => {
                     return false;
                 });
                 $(`#${i}`).on("click", { game: game, id: i }, cell_uncover_cb);
-            } //TODO maybe make this less janky
+            }
         }
     });
 }
@@ -450,9 +428,15 @@ function main() {
 
     document.querySelectorAll(".menuButton").forEach(button => {
         let [rows, cols, mines] = button
-            .getAttribute("data-size")
+            .getAttribute("data-size-desktop")
             .split("x")
-            .map(s => Number(s));
+            .map(s => Number(s));;
+        if (isMobile()) {
+            [rows, cols, mines] = button
+                .getAttribute("data-size-mobile")
+                .split("x")
+                .map(s => Number(s));
+        }
         button.addEventListener("click", button_cb.bind(null, game, rows, cols, mines));
     });
 
