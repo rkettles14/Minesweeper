@@ -346,12 +346,12 @@ function cell_uncover_cb(event) {
         game.stopTimer();
         if (status.exploded) {
             document.querySelector("#overlay .big.glow").innerHTML = "You Exploded!!!"
-            document.querySelector("#overlay").classList.toggle("active");
-            document.querySelector("#overlay").classList.toggle("lose");
+            document.querySelector("#overlay").classList.add("lose");
+            document.querySelector("#overlay").classList.add("active");
         } else {
             document.querySelector("#overlay .big.glow").innerHTML = "Congratulations, You Won!"
-            document.querySelector("#overlay").classList.toggle("active");
-            document.querySelector("#overlay").classList.toggle("win");
+            document.querySelector("#overlay").classList.add("win");
+            document.querySelector("#overlay").classList.add("active");
         }
     }
 }
@@ -378,6 +378,8 @@ function cell_flag_cb(event) {
 function overlay_click_cb(event) {
     const game = event.data.game;
     document.querySelector("#overlay").classList.remove("active");
+    document.querySelector("#overlay").classList.remove("win");
+    document.querySelector("#overlay").classList.remove("lose");
     startNewGame(game, game.rows, game.cols, game.mines);
 }
 
