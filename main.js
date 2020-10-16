@@ -401,7 +401,6 @@ function initializeCells(game) {
     const nCells = 20 * 24;
     if (isMobile()) {
         for (let i = 0; i < nCells; i++) {
-            $(`#${i}`).on("tap", { game: game, id: i }, cell_uncover_cb);
             $(`#${i}`).on("taphold", { game: game, id: i }, cell_flag_cb);
             $(`#${i}`).on("contextmenu", () => {
                 return false;
@@ -409,6 +408,7 @@ function initializeCells(game) {
             $('.grid').on("contextmenu", () => {
                 return false;
             });
+            $(`#${i}`).on("click", { game: game, id: i }, cell_uncover_cb);
         }
     } else {
         for (let i = 0; i < nCells; i++) {
@@ -433,7 +433,7 @@ function clearCells(game) {
 
 function lockCell(id, game) {
     if (isMobile()) {
-        $(`#${id}`).off("tap");
+        $(`#${id}`).off("click");
     } else {
         $(`#${id}`).off("click");
     }
@@ -441,7 +441,7 @@ function lockCell(id, game) {
 
 function unlockCell(id, game) {
     if (isMobile()) {
-        $(`#${id}`).on("tap", { game: game, id: id }, cell_uncover_cb);
+        $(`#${id}`).on("click", { game: game, id: id }, cell_uncover_cb);
     } else {
         $(`#${id}`).on("click", { game: game, id: id }, cell_uncover_cb);
     }
