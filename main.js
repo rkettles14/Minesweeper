@@ -2,8 +2,8 @@ $(document).ready(function() {
     $.event.special.tap.emitTapOnTaphold = false;
 });
 
+//the following function was taken from http://detectmobilebrowsers.com/
 function isMobile() {
-    //the following code is taken from http://detectmobilebrowsers.com/
     let check = false;
     (function(a) {
         if (
@@ -336,7 +336,6 @@ function cell_uncover_cb(event) {
     const col = id % game.cols;
     const row = Math.floor(id / game.cols);
     game.uncover(row, col);
-    //s.moves++;
     render(game);
     console.log(game.getRendering().join("\n"));
     let status = game.getGameStatus();
